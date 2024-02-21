@@ -368,6 +368,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "depends_new"
+version = "0.10.2"
+dependencies = [
+ "ahash",
+ "depends_derives",
+ "hashbrown 0.14.0",
+ "serial_test",
+ "thiserror",
+]
+
+[[package]]
 name = "depends_tests"
 version = "0.0.0"
 dependencies = [
