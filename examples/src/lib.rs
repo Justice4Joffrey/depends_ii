@@ -6,7 +6,8 @@ pub mod models;
 
 mod comments;
 mod comments_to_posts;
-mod docs;
+// TODO: reenable
+// mod docs;
 mod friends;
 mod likes;
 mod post_scores_query;

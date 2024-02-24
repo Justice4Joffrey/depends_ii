@@ -95,3 +95,4 @@ pub trait UpdateInput: Named + HashValue + Clean {
 
     fn update_mut(&mut self, update: Self::Update);
 }
+// TODO: this should be replaced with UpdateTarget

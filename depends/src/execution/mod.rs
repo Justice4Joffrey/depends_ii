@@ -12,10 +12,13 @@ mod primitives;
 mod resolve;
 mod update_derived;
 mod update_input;
+mod update_target;
 mod visitor;
 
 pub use clean::Clean;
-pub use dependency::{DepRef, Dependency, SingleDep, SingleRef};
+// TODO: explicit re-export
+// pub use dependency::{DepRef, Dependency, SingleDep, SingleRef};
+pub use dependency::*;
 pub use derived::{DerivedNode, TargetMut};
 pub use hash_value::HashValue;
 pub use identifiable::{next_node_id, Identifiable};
@@ -26,6 +29,7 @@ pub use node::{NodeHash, NodeRef, NodeState};
 pub use resolve::Resolve;
 pub use update_derived::UpdateDerived;
 pub use update_input::UpdateInput;
+pub use update_target::UpdateTarget;
 pub use visitor::{HashSetVisitor, Visitor};
 
 #[cfg(feature = "graphviz")]

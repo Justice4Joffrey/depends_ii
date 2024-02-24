@@ -1,14 +1,16 @@
 use std::{
-    cell::{Ref, RefCell, RefMut},
-    marker::PhantomData,
+    cell::{Ref, RefCell},
     rc::Rc,
 };
 
 pub use hrtb_workaround::IsDirtyInferenceWorkaround;
 
-use crate::execution::{
-    error::ResolveError, next_node_id, Clean, HashValue, Identifiable, IsDirty, Named, NodeState,
-    Resolve, UpdateDerived, Visitor,
+use crate::{
+    execution::{
+        error::ResolveError, next_node_id, Clean, HashValue, Identifiable, IsDirty, Named,
+        NodeState, Resolve, Visitor,
+    },
+    UpdateTarget,
 };
 
 /// # Derived Node
@@ -107,7 +109,7 @@ use crate::execution::{
 ///     "Hello, world! See ya."
 /// );
 /// ```
-pub struct DerivedNode<D, F, T> {
+pub struct DerivedNode<D, T> {
     /// The dependencies of this node. This can be a single node, or a
     /// struct containing multiple nodes.
     dependencies: D,
@@ -115,57 +117,45 @@ pub struct DerivedNode<D, F, T> {
     value: RefCell<NodeState<T>>,
     /// The unique runtime Id of this node.
     id: usize,
-    /// A type representing the function used to update the value of this
-    /// node. This is only called if the dependencies appear to have changed.
-    phantom: PhantomData<F>,
 }
 
-impl<D, F, T> DerivedNode<D, F, T>
+impl<D, T> DerivedNode<D, T>
 where
-    for<'a> D: Resolve + IsDirtyInferenceWorkaround<'a> + 'a,
-    for<'a> F: UpdateDerived<
-            Input<'a> = <D as IsDirtyInferenceWorkaround<'a>>::OutputWorkaround,
-            Target<'a> = RefMut<'a, NodeState<T>>,
-        > + 'a,
+    for<'a> D: IsDirtyInferenceWorkaround<'a> + 'a,
+    for<'a> T: UpdateTarget<<D as IsDirtyInferenceWorkaround<'a>>::OutputWorkaround> + 'a,
     T: HashValue + Clean + Named,
 {
     /// Construct this node.
-    pub fn new(dependencies: D, update: F, value: T) -> Rc<Self> {
-        Self::new_with_id(dependencies, update, value, next_node_id())
+    pub fn new(dependencies: D, value: T) -> Rc<Self> {
+        Self::new_with_id(dependencies, value, next_node_id())
     }
 
     /// Create this node with a specified Id. Useful for tests.
-    pub fn new_with_id(dependencies: D, _: F, value: T, id: usize) -> Rc<Self> {
-        // TODO: we should store `update` and make the `update_derived` call
-        //  take a &self so that values can be provided for update fns.
+    pub fn new_with_id(dependencies: D, value: T, id: usize) -> Rc<Self> {
         Rc::new(Self {
             dependencies,
-            phantom: PhantomData::<F>,
             value: RefCell::new(NodeState::new(value)),
             id,
         })
     }
 }
 
-impl<D, F, T> Resolve for DerivedNode<D, F, T>
+impl<D, T> Resolve for DerivedNode<D, T>
 where
-    for<'a> D: Resolve + IsDirtyInferenceWorkaround<'a> + 'a,
-    for<'a> F: UpdateDerived<
-            Input<'a> = <D as IsDirtyInferenceWorkaround<'a>>::OutputWorkaround,
-            Target<'a> = RefMut<'a, NodeState<T>>,
-        > + 'a,
+    for<'a> D: IsDirtyInferenceWorkaround<'a> + 'a,
+    for<'a> T: UpdateTarget<<D as IsDirtyInferenceWorkaround<'a>>::OutputWorkaround> + 'a,
     T: HashValue + Clean + Named,
 {
     type Output<'a> = Ref<'a, NodeState<T>> where Self: 'a ;
 
     fn resolve(&self, visitor: &mut impl Visitor) -> Result<Self::Output<'_>, ResolveError> {
-        visitor.touch(self, Some(F::name()));
         if visitor.visit(self) {
             let mut node_state = self.value.try_borrow_mut()?;
             node_state.clean();
             let input = self.dependencies.resolve_workaround(visitor)?;
             if input.is_dirty() {
-                F::update_derived(input, node_state)?;
+                // TODO: try to do this in one borrow again now
+                node_state.update_mut(input)?;
                 // TODO: I'm running in to lifetime issues passing a
                 //  &mut node_state above, which would prevent the need to
                 //  reborrow here. For some reason, a mutable reference
@@ -182,13 +172,13 @@ where
     }
 }
 
-impl<D, F, T: Named> Named for DerivedNode<D, F, T> {
+impl<D, T: Named> Named for DerivedNode<D, T> {
     fn name() -> &'static str {
         T::name()
     }
 }
 
-impl<D, F, T: Named> Identifiable for DerivedNode<D, F, T> {
+impl<D, T: Named> Identifiable for DerivedNode<D, T> {
     fn id(&self) -> usize {
         self.id
     }

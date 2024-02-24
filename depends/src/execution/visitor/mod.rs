@@ -28,6 +28,7 @@ pub trait Visitor {
     fn clear(&mut self);
 
     /// Touch the node. Useful for building graph visualisations.
+    // TODO: this can be removed I think
     fn touch<N>(&mut self, _node: &N, _operation: Option<&'static str>)
     where
         N: Identifiable,
