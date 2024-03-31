@@ -1,9 +1,10 @@
 use core::cell::RefCell;
 use std::cell::Ref;
+use std::marker::PhantomData;
 use std::ops::Deref;
 use std::sync::Arc;
 
-pub trait UpdateTarget<T> {
+pub trait UpdateTarget<T, F> {
     fn update(&mut self, value: T);
 }
 
@@ -23,10 +24,6 @@ impl NumberLike for Number {
     }
 }
 
-pub struct Sum {
-    pub value: i32,
-}
-
 pub struct Number {
     pub value: i32,
 }
@@ -37,37 +34,41 @@ impl UpdateInput for Number {
     }
 }
 
-pub struct DepRef2<'a, A, B> {
-    a: A,
-    b: B,
-    phantom: std::marker::PhantomData<&'a ()>,
+pub struct Dependency<T> {
+    value: T,
 }
-
 pub struct Dependencies2<A, B> {
     a: Dependency<A>,
     b: Dependency<B>,
 }
 
-impl<A, B> Resolve for Dependencies2<A, B> where
+pub struct DepRef<'a, A> {
+    a: A,
+    phantom: std::marker::PhantomData<&'a ()>,
+}
+
+pub struct DepRef2<'a, A, B> {
+    a: DepRef<'a,A>,
+    b: DepRef<'a, B>,
+    phantom: std::marker::PhantomData<&'a ()>,
+}
+
+impl<A, B> Resolve for Dependencies2<A, B>
+where
     A: Resolve,
-        // for<'a> <T as Resolve>::Output<'a>: HashValue,
-    B: Resolve
+    B: Resolve ,
 {
     type Output<'a> = DepRef2<'a, A::Output<'a>, B::Output<'a>> where Self: 'a;
 
-    fn resolve(&self) -> Self::Output<'_> {
-        println!("Dependencies2::resolve");
+    fn resolve(&self, ) -> Self::Output<'_> {
         DepRef2 {
-            a: self.a.resolve(),
-            b: self.b.resolve(),
+            a: DepRef {a: self.a.resolve(), phantom: PhantomData},
+            b: DepRef {a: self.b.resolve(), phantom: PhantomData},
             phantom: std::marker::PhantomData,
         }
     }
 }
 
-pub struct Dependency<T> {
-    value: T,
-}
 
 pub trait Resolve {
     type Output<'a> where Self: 'a;
@@ -81,15 +82,26 @@ impl<T> Resolve for Dependency<T> where T: Resolve {
     }
 }
 
-impl<'a, A, B> UpdateTarget<DepRef2<'a, A, B>> for Sum where A: NumberLike, B: NumberLike {
+struct SumIt;
+
+struct MultiplyIt;
+
+impl<'a, A, B> UpdateTarget<DepRef2<'a, A, B>, SumIt> for Number where A: NumberLike, B: NumberLike {
     fn update(&mut self, value: DepRef2<'a, A, B>) {
-        self.value = value.a.value() + value.b.value();
+        self.value = value.a.a.value() + value.b.a.value();
     }
 }
 
-pub struct DerivedNode<D, T> {
+impl<'a, A, B> UpdateTarget<DepRef2<'a, A, B>, MultiplyIt> for Number where A: NumberLike, B: NumberLike {
+    fn update(&mut self, value: DepRef2<'a, A, B>) {
+        self.value = value.a.a.value() * value.b.a.value();
+    }
+}
+
+pub struct DerivedNode<D, T, F> {
     dependencies: D,
     value: RefCell<T>,
+    phantom: PhantomData<F>,
 }
 
 pub struct InputNode<T> {
@@ -121,10 +133,10 @@ impl<T> Resolve for InputNode<T> {
     }
 }
 
-impl<D, T> Resolve for DerivedNode<D, T>
+impl<D, T, F> Resolve for DerivedNode<D, T, F>
     where
             for<'a> D: Resolve + 'a,
-            for<'a> T: UpdateTarget<<D as Resolve>::Output<'a>> + 'a,
+            for<'a> T: UpdateTarget<<D as Resolve>::Output<'a>, F> + 'a,
 {
     type Output<'a> = Ref<'a, T> where Self: 'a;
 
@@ -138,10 +150,10 @@ impl<D, T> Resolve for DerivedNode<D, T>
     }
 }
 
-impl<D, T> DerivedNode<D, T>
+impl<D, T, F> DerivedNode<D, T, F>
     where
             for<'a> D: Resolve + 'a,
-            for<'a> T: UpdateTarget<<D as Resolve>::Output<'a>> + 'a,
+            for<'a> T: UpdateTarget<<D as Resolve>::Output<'a>, F> + 'a,
 {
     /// Create this node with a specified Id. Useful for tests.
     pub fn new_with_id(dependencies: D, value: T, id: usize) -> Arc<Self> {
@@ -150,6 +162,7 @@ impl<D, T> DerivedNode<D, T>
         Arc::new(Self {
             dependencies,
             value: RefCell::new(value),
+            phantom: Default::default(),
         })
     }
 }
@@ -170,17 +183,26 @@ mod tests {
     fn it_works() {
         let a = InputNode::new(Number { value: 1 }) ;
         let b = InputNode::new(Number { value: 2 }) ;
-        let sum = DerivedNode::new_with_id(
+        let c = InputNode::new(Number { value: 10 }) ;
+        let sum = DerivedNode::<_, _, SumIt>::new_with_id(
             Dependencies2 {
                 a: Dependency { value: a },
                 b: Dependency { value: b },
             },
-            Sum { value: 0 },
+            Number{ value: 0 },
+            0,
+        );
+        let multi = DerivedNode::<_, _, MultiplyIt>::new_with_id(
+            Dependencies2 {
+                a: Dependency { value: sum },
+                b: Dependency { value: c },
+            },
+            Number{ value: 0 },
             0,
         );
         println!("sum");
-        let ans = sum.resolve();
+        let ans = multi.resolve();
         println!("sum fone");
-        assert_eq!(ans.value, 3);
+        assert_eq!(ans.value, 30);
     }
 }

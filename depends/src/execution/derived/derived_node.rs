@@ -107,7 +107,7 @@ use crate::execution::{
 ///     "Hello, world! See ya."
 /// );
 /// ```
-pub struct DerivedNode<D, F, T> {
+pub struct DerivedNode<D, T, F> {
     /// The dependencies of this node. This can be a single node, or a
     /// struct containing multiple nodes.
     dependencies: D,
@@ -115,23 +115,24 @@ pub struct DerivedNode<D, F, T> {
     value: RefCell<NodeState<T>>,
     /// The unique runtime Id of this node.
     id: usize,
-    /// A type representing the function used to update the value of this
-    /// node. This is only called if the dependencies appear to have changed.
+    /// Phantom data to hold the type of the operation.
     phantom: PhantomData<F>,
 }
 
-impl<D, F, T> DerivedNode<D, F, T>
+impl<D, T, F> DerivedNode<D, T, F>
 where
     for<'a> D: Resolve + IsDirtyInferenceWorkaround<'a> + 'a,
-    for<'a> F: UpdateDerived<
-            Input<'a> = <D as IsDirtyInferenceWorkaround<'a>>::OutputWorkaround,
-            Target<'a> = RefMut<'a, NodeState<T>>,
-        > + 'a,
+    for<'a> T: UpdateDerived<<D as Resolve>::Output<'a>, F> + 'a,
+    // TODO
+    // for<'a> F: UpdateDerived<
+    //         Input<'a> = <D as IsDirtyInferenceWorkaround<'a>>::OutputWorkaround,
+    //         Target<'a> = RefMut<'a, NodeState<T>>,
+    //     > + 'a,
     T: HashValue + Clean + Named,
 {
     /// Construct this node.
-    pub fn new(dependencies: D, update: F, value: T) -> Rc<Self> {
-        Self::new_with_id(dependencies, update, value, next_node_id())
+    pub fn new(dependencies: D, operation: F, value: T) -> Rc<Self> {
+        Self::new_with_id(dependencies, operation, value, next_node_id())
     }
 
     /// Create this node with a specified Id. Useful for tests.
@@ -140,32 +141,36 @@ where
         //  take a &self so that values can be provided for update fns.
         Rc::new(Self {
             dependencies,
-            phantom: PhantomData::<F>,
             value: RefCell::new(NodeState::new(value)),
             id,
+            phantom: PhantomData,
         })
     }
 }
 
-impl<D, F, T> Resolve for DerivedNode<D, F, T>
+impl<D, T, F> Resolve for DerivedNode<D, T, F>
 where
     for<'a> D: Resolve + IsDirtyInferenceWorkaround<'a> + 'a,
-    for<'a> F: UpdateDerived<
-            Input<'a> = <D as IsDirtyInferenceWorkaround<'a>>::OutputWorkaround,
-            Target<'a> = RefMut<'a, NodeState<T>>,
-        > + 'a,
+// TODO
+    // for<'a> F: UpdateDerived<
+    //         Input<'a> = <D as IsDirtyInferenceWorkaround<'a>>::OutputWorkaround,
+    //         Target<'a> = RefMut<'a, NodeState<T>>,
+    //     > + 'a,
+    for<'a> T: UpdateDerived<<D as IsDirtyInferenceWorkaround<'a>>::OutputWorkaround, F>,
     T: HashValue + Clean + Named,
 {
     type Output<'a> = Ref<'a, NodeState<T>> where Self: 'a ;
 
     fn resolve(&self, visitor: &mut impl Visitor) -> Result<Self::Output<'_>, ResolveError> {
-        visitor.touch(self, Some(F::name()));
+        // TODO: irrelvant now?
         if visitor.visit(self) {
             let mut node_state = self.value.try_borrow_mut()?;
             node_state.clean();
             let input = self.dependencies.resolve_workaround(visitor)?;
             if input.is_dirty() {
-                F::update_derived(input, node_state)?;
+                // TODO: either keep this or remove the generic impl on nodeState
+                node_state.value_mut().update(input)?;
+                // node_state.update(input)?;
                 // TODO: I'm running in to lifetime issues passing a
                 //  &mut node_state above, which would prevent the need to
                 //  reborrow here. For some reason, a mutable reference
@@ -182,13 +187,13 @@ where
     }
 }
 
-impl<D, F, T: Named> Named for DerivedNode<D, F, T> {
+impl<D, T: Named, F> Named for DerivedNode<D, T, F> {
     fn name() -> &'static str {
         T::name()
     }
 }
 
-impl<D, F, T: Named> Identifiable for DerivedNode<D, F, T> {
+impl<D, T: Named, F> Identifiable for DerivedNode<D, T, F> {
     fn id(&self) -> usize {
         self.id
     }
@@ -199,7 +204,7 @@ mod hrtb_workaround {
 
     /// If we just provide the constraint
     /// ``` text
-    /// impl<D, F, T> Resolve for DerivedNode<D, F, T>
+    /// impl<D, T> Resolve for DerivedNode<D, T>
     /// where
     ///     D: Resolve,
     ///     for<'a> <D as Resolve>::Output<'a>: IsDirty

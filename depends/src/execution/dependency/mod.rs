@@ -1,5 +1,6 @@
 mod dep_ref;
 mod dep_state;
+mod impls;
 
 use std::{
     cell::{Ref, RefCell},
@@ -8,6 +9,7 @@ use std::{
 
 pub use dep_ref::DepRef;
 pub use dep_state::DependencyState;
+pub use impls::*;
 
 use super::{HashValue, NodeHash, Resolve};
 use crate::execution::{error::ResolveResult, NodeState, Visitor};
