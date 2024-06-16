@@ -1,5 +1,5 @@
 use std::{
-    cell::{Ref, RefCell, RefMut},
+    cell::{Ref, RefCell},
     marker::PhantomData,
     rc::Rc,
 };
@@ -42,36 +42,31 @@ use crate::execution::{
 /// > not be consistent between different visitor instances.
 ///
 /// ```
+/// # use std::cell::Ref;
 /// # use std::rc::Rc;
-/// # use depends::{DerivedNode, HashSetVisitor, InputNode, Resolve, TargetMut, UpdateDerived};
+/// # use depends::{Dependencies2, DepRef2, DerivedNode, HashSetVisitor, InputNode, NodeState, Resolve, TargetMut, UpdateDerived};
 /// # use depends::derives::Operation;
 /// # use depends::error::EarlyExit;
 /// # use depends_derives::Dependencies;
 /// # #[derive(Operation)]
 /// # struct Concat;
-/// # impl UpdateDerived for Concat {
-/// #     type Input<'a> = TwoStringsRef<'a> where Self: 'a;
-/// #     type Target<'a> = TargetMut<'a, String> where Self: 'a;
-/// #     fn update_derived(
-/// #         TwoStringsRef { first, second }: Self::Input<'_>,
-/// #         mut target: Self::Target<'_>,
-/// #     ) -> Result<(), EarlyExit> {
-/// #         **target = format!("{} {}", first.value(), second.value());
+/// # impl UpdateDerived<DepRef2<'_, Ref<'_, NodeState<String>>, Ref<'_, NodeState<String>>>, Concat> for String {
+/// #    fn update(
+/// #        &mut self,
+/// #        deps: DepRef2<'_, Ref<'_, NodeState<String>>, Ref<'_, NodeState<String>>>,
+/// #    ) -> Result<(), EarlyExit> {
+/// #         *self = format!("{} {}", deps.a.data().value(), deps.b.data().value());
 /// #         Ok(())
-/// #     }
+/// #    }
 /// # }
-/// # #[derive(Dependencies)]
-/// # struct TwoStrings {
-/// #     first: String,
-/// #     second: String,
-/// # }
+///
 /// // Create some input nodes.
 /// let input_1 = InputNode::new("Hello,".to_string());
 /// let input_2 = InputNode::new("???".to_string());
 ///
 /// // Create a derived node.
 /// let node = DerivedNode::new(
-///     TwoStrings::init(Rc::clone(&input_1), Rc::clone(&input_2)),
+///     Dependencies2::new(Rc::clone(&input_1), Rc::clone(&input_2)),
 ///     Concat,
 ///     String::new()
 /// );
@@ -97,7 +92,7 @@ use crate::execution::{
 /// let input_3 = InputNode::new("See ya.".to_string());
 ///
 /// let another_node = DerivedNode::new(
-///     TwoStrings::init(Rc::clone(&node), Rc::clone(&input_3)),
+///     Dependencies2::new(Rc::clone(&node), Rc::clone(&input_3)),
 ///     Concat,
 ///     String::new()
 /// );

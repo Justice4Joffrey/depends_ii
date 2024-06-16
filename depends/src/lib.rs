@@ -23,7 +23,7 @@
 //! the compile-time guarantees of the type-system.
 //!
 //! ```
-//! # use std::cell::{RefMut};
+//! # use std::cell::{Ref, RefMut};
 //! # use std::{
 //! #     hash::{Hash, Hasher},
 //! # };
@@ -31,26 +31,18 @@
 //! # use std::rc::Rc;
 //! #
 //! # use depends::error::{EarlyExit, ResolveResult};
-//! # use depends::{HashSetVisitor, NodeState, SingleRef, TargetMut};
+//! # use depends::{Dependencies2, DepRef, DepRef2, HashSetVisitor, NodeState, SingleRef, TargetMut};
 //! # use depends::{
 //! #     DerivedNode, InputNode, Resolve, UpdateDerived, UpdateInput,
 //! #     derives::{Dependencies, Operation, Value},
 //! # };
-//! # #[derive(Dependencies)]
-//! # pub struct TwoNumbers {
-//! #    left: i64,
-//! #    right: i32,
-//! # }
-//! # #[derive(Operation)]
 //! # struct Multiply;
-//! # impl UpdateDerived for Multiply {
-//! #    type Input<'a> = TwoNumbersRef<'a> where Self: 'a;
-//! #    type Target<'a> = TargetMut<'a, i64> where Self: 'a;
-//! #    fn update_derived(
-//! #        TwoNumbersRef { left, right }: TwoNumbersRef<'_>,
-//! #        mut target: TargetMut<'_, i64>,
+//! # impl UpdateDerived<DepRef2<'_, Ref<'_, NodeState<i64>>, Ref<'_, NodeState<i32>>>, Multiply> for i64 {
+//! #    fn update(
+//! #        &mut self,
+//! #        deps: DepRef2<'_, Ref<'_, NodeState<i64>>, Ref<'_, NodeState<i32>>>,
 //! #    ) -> Result<(), EarlyExit> {
-//! #        *target.value_mut() = left.value() * (*right.value() as i64);
+//! #        *self = deps.a.data().value() * (*deps.b.data().value()as i64);
 //! #        Ok(())
 //! #    }
 //! # }
@@ -65,7 +57,7 @@
 //! // they're compatible with the dependencies (`TwoNumbers`) and operation
 //! // (`Multiply`).
 //! let c = DerivedNode::new(
-//!     TwoNumbers::init(Rc::clone(&a), Rc::clone(&b)),
+//!     Dependencies2::new(Rc::clone(&a), Rc::clone(&b)),
 //!     Multiply,
 //!     0_i64,
 //! );

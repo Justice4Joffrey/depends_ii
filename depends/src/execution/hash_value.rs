@@ -1,7 +1,7 @@
-use std::{cell::Ref, hash::Hasher, ops::Deref};
+use std::{hash::Hasher, ops::Deref};
 use crate::NodeRef;
 
-use super::{NodeHash, NodeState};
+use super::{NodeHash};
 
 /// A unique number derived from the internal state of a node.
 pub trait HashValue {

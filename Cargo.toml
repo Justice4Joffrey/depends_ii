@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
     "depends",
-    "depends_new",
     "depends_derives",
     "depends_core",
     # Internal
