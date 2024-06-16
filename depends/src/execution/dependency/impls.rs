@@ -1,5 +1,5 @@
 use crate::error::ResolveResult;
-use crate::{DepRef, Dependency, HashValue, Resolve, Visitor};
+use crate::{DepRef, Dependency, HashValue, IsDirty, Resolve, Visitor};
 
 // todo: all the impls with a macro_rules
 pub struct Dependencies2<A, B> {
@@ -8,27 +8,38 @@ pub struct Dependencies2<A, B> {
 }
 
 impl<A, B> Dependencies2<A, B>
-    where
-        A: Resolve,
-        for<'a> <A as Resolve>::Output<'a>: HashValue,
-        B: Resolve + HashValue,
-        for<'a> <B as Resolve>::Output<'a>: HashValue,
+where
+    A: Resolve,
+    for<'a> <A as Resolve>::Output<'a>: HashValue,
+    B: Resolve,
+    for<'a> <B as Resolve>::Output<'a>: HashValue,
 {
-    pub fn new(a: A, b: B) -> Self {
-        Self { a: Dependency::new(a), b: Dependency::new(b) }
+    pub fn new(a: Dependency<A>, b: Dependency<B>) -> Self {
+        // TODO: create the Dependency here
+        Self { a, b }
     }
 }
 
 pub struct DepRef2<'a, A, B> {
-    a: DepRef<'a, A>,
-    b: DepRef<'a, B>,
+    pub a: DepRef<'a, A>,
+    pub b: DepRef<'a, B>,
+}
+
+impl<A, B> IsDirty for DepRef2<'_, A, B>
+where
+    A: IsDirty,
+    B: IsDirty,
+{
+    fn is_dirty(&self) -> bool {
+        self.a.is_dirty() || self.b.is_dirty()
+    }
 }
 
 impl<A, B> Resolve for Dependencies2<A, B>
 where
     A: Resolve,
     for<'a> <A as Resolve>::Output<'a>: HashValue,
-    B: Resolve + HashValue,
+    B: Resolve,
     for<'a> <B as Resolve>::Output<'a>: HashValue,
 {
     type Output<'a> = DepRef2<'a, A::Output<'a>, B::Output<'a>> where Self: 'a;
@@ -48,16 +59,17 @@ pub struct Dependencies3<A, B, C> {
 }
 
 impl<A, B, C> Dependencies3<A, B, C>
-    where
-        A: Resolve,
-        for<'a> <A as Resolve>::Output<'a>: HashValue,
-        B: Resolve + HashValue,
-        for<'a> <B as Resolve>::Output<'a>: HashValue,
-        C: Resolve,
-        for<'a> <C as Resolve>::Output<'a>: HashValue,
+where
+    A: Resolve,
+    for<'a> <A as Resolve>::Output<'a>: HashValue,
+    B: Resolve,
+    for<'a> <B as Resolve>::Output<'a>: HashValue,
+    C: Resolve,
+    for<'a> <C as Resolve>::Output<'a>: HashValue,
 {
-    pub fn new(a: A, b: B, c: C) -> Self {
-        Self { a: Dependency::new(a), b: Dependency::new(b), c: Dependency::new(c) }
+    pub fn new(a: Dependency<A>, b: Dependency<B>, c: Dependency<C>) -> Self {
+        // TODO: create the Dependency here
+        Self { a, b, c }
     }
 }
 
@@ -68,11 +80,22 @@ pub struct DepRef3<'a, A, B, C> {
     phantom: std::marker::PhantomData<&'a ()>,
 }
 
+impl<A, B, C> IsDirty for DepRef3<'_, A, B, C>
+where
+    A: IsDirty,
+    B: IsDirty,
+    C: IsDirty,
+{
+    fn is_dirty(&self) -> bool {
+        self.a.is_dirty() || self.b.is_dirty() || self.c.is_dirty()
+    }
+}
+
 impl<A, B, C> Resolve for crate::execution::dependency::Dependencies3<A, B, C>
 where
     A: Resolve,
     for<'a> <A as Resolve>::Output<'a>: HashValue,
-    B: Resolve + HashValue,
+    B: Resolve,
     for<'a> <B as Resolve>::Output<'a>: HashValue,
     C: Resolve,
     for<'a> <C as Resolve>::Output<'a>: HashValue,

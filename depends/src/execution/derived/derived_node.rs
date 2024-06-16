@@ -170,13 +170,13 @@ where
             if input.is_dirty() {
                 // TODO: either keep this or remove the generic impl on nodeState
                 node_state.value_mut().update(input)?;
-                // node_state.update(input)?;
                 // TODO: I'm running in to lifetime issues passing a
                 //  &mut node_state above, which would prevent the need to
                 //  reborrow here. For some reason, a mutable reference
                 //  causes the borrow checker to want node_state to live
                 //  beyond the current block (presumably to match input),
                 //  whereas a shared reference does not.
+                drop(node_state);
                 let mut node_state = self.value.try_borrow_mut()?;
                 node_state.update_node_hash(&mut visitor.hasher());
                 visitor.notify_recalculated(self);

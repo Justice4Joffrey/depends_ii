@@ -33,6 +33,7 @@ pub struct Dependency<T> {
 impl<T> Dependency<T>
 where
     T: Resolve,
+    for<'a> <T as Resolve>::Output<'a>: HashValue,
 {
     pub fn new(dependency: T) -> Self {
         Self {

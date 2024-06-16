@@ -1,4 +1,5 @@
 use std::{cell::Ref, hash::Hasher, ops::Deref};
+use crate::NodeRef;
 
 use super::{NodeHash, NodeState};
 
@@ -9,7 +10,7 @@ pub trait HashValue {
     fn hash_value(&self, hasher: &mut impl Hasher) -> NodeHash;
 }
 
-impl<T: HashValue> HashValue for Ref<'_, NodeState<T>> {
+impl<T: HashValue> HashValue for NodeRef<'_, T> {
     fn hash_value(&self, hasher: &mut impl Hasher) -> NodeHash {
         self.deref().hash_value(hasher)
     }

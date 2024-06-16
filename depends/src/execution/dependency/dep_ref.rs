@@ -19,6 +19,10 @@ impl<T> DepRef<'_, T> {
             phantom: PhantomData,
         }
     }
+
+    pub fn data(&self) -> &T {
+        &self.data
+    }
 }
 
 impl<T> IsDirty for DepRef<'_, T> {
