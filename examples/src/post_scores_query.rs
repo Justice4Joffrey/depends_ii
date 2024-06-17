@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use depends::{
     derives::{Dependencies, Operation, Value},
     error::EarlyExit,
-    TargetMut, UpdateDerived,
+    DepRef2, DepRef4, SingleDep, SingleRef, TargetMut, UpdateDerived,
 };
 use hashbrown::HashMap;
 
@@ -109,25 +109,31 @@ pub struct CommentsPostsLikes {
 #[derive(Operation)]
 pub struct UpdatePostScoresQuery;
 
-impl UpdateDerived for UpdatePostScoresQuery {
-    type Input<'a> = CommentsPostsLikesRef<'a>
-    where
-        Self: 'a;
-    type Target<'a> = TargetMut<'a, PostScoresQuery>
-    where
-        Self: 'a;
-
-    fn update_derived(
-        CommentsPostsLikesRef {
-            comments,
-            comments_to_posts,
-            posts,
-            likes,
-        }: Self::Input<'_>,
-        mut target: Self::Target<'_>,
+// TODO: use shorthand
+impl
+    UpdateDerived<
+        DepRef4<
+            '_,
+            SingleRef<'_, Comments>,
+            SingleRef<'_, CommentsToPosts>,
+            SingleRef<'_, Posts>,
+            SingleRef<'_, Likes>,
+        >,
+        UpdatePostScoresQuery,
+    > for PostScoresQuery
+{
+    fn update(
+        &mut self,
+        value: DepRef4<
+            '_,
+            SingleRef<'_, Comments>,
+            SingleRef<'_, CommentsToPosts>,
+            SingleRef<'_, Posts>,
+            SingleRef<'_, Likes>,
+        >,
     ) -> Result<(), EarlyExit> {
-        for post in posts.new_posts() {
-            target.post_scores.insert(
+        for post in value.c.new_posts() {
+            self.post_scores.insert(
                 post.id,
                 PostScore {
                     score: 0,
@@ -138,20 +144,20 @@ impl UpdateDerived for UpdatePostScoresQuery {
         }
 
         let mut delta = 0;
-        for comment in comments.new_comments() {
-            let post_id = comments_to_posts.get_post_id(comment.id)?;
-            if target.update_post_score(post_id, 10)? {
+        for comment in value.a.new_comments() {
+            let post_id = value.b.get_post_id(comment.id)?;
+            if self.update_post_score(post_id, 10)? {
                 delta = 1;
             }
         }
 
-        for like in likes.new_likes() {
-            let post_id = comments_to_posts.get_post_id(like.comment_id)?;
-            if target.update_post_score(post_id, 1)? {
+        for like in value.d.new_likes() {
+            let post_id = value.b.get_post_id(like.comment_id)?;
+            if self.update_post_score(post_id, 1)? {
                 delta = 1;
             }
         }
-        target.top_posts_generation += delta;
+        self.top_posts_generation += delta;
         Ok(())
     }
 }

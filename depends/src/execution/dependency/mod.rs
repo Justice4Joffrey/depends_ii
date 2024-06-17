@@ -14,6 +14,7 @@ pub use impls::*;
 use super::{HashValue, NodeHash, Resolve};
 use crate::execution::{error::ResolveResult, NodeState, Visitor};
 
+// TODO: replace this with a Dep1, Dep2, etc. macro.
 /// Short-hand for a reference to a single dependency.
 pub type SingleRef<'a, T> = DepRef<'a, Ref<'a, NodeState<T>>>;
 /// Short-hand for a single dependency type.
