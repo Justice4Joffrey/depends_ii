@@ -36,6 +36,7 @@
 //! #     DerivedNode, InputNode, Resolve, UpdateDerived, UpdateInput,
 //! #     derives::{Dependencies, Operation, Value},
 //! # };
+//! # #[derive(Operation)]
 //! # struct Multiply;
 //! # impl UpdateDerived<DepRef2<'_, Ref<'_, NodeState<i64>>, Ref<'_, NodeState<i32>>>, Multiply> for i64 {
 //! #    fn update(
