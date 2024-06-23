@@ -82,7 +82,6 @@ dependencies = [
  "envconfig",
  "examples",
  "hashbrown 0.14.0",
- "regex",
  "serde",
 ]
 
@@ -373,6 +372,7 @@ name = "depends_tests"
 version = "0.0.0"
 dependencies = [
  "depends",
+ "examples",
 ]
 
 [[package]]

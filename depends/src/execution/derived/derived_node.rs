@@ -44,10 +44,9 @@ use crate::execution::{
 /// ```
 /// # use std::cell::Ref;
 /// # use std::rc::Rc;
-/// # use depends::{Dependencies2, DepRef2, DerivedNode, HashSetVisitor, InputNode, NodeState, Resolve, TargetMut, UpdateDerived};
+/// # use depends::{Dependencies2, DepRef2, DerivedNode, HashSetVisitor, InputNode, NodeState, Resolve, UpdateDerived};
 /// # use depends::derives::Operation;
 /// # use depends::error::EarlyExit;
-/// # use depends_derives::Dependencies;
 /// # #[derive(Operation)]
 /// # struct Concat;
 /// # impl UpdateDerived<DepRef2<'_, Ref<'_, NodeState<String>>, Ref<'_, NodeState<String>>>, Concat> for String {
@@ -118,12 +117,8 @@ impl<D, T, F> DerivedNode<D, T, F>
 where
     for<'a> D: Resolve + IsDirtyInferenceWorkaround<'a> + 'a,
     for<'a> T: UpdateDerived<<D as Resolve>::Output<'a>, F> + 'a,
-    // TODO
-    // for<'a> F: UpdateDerived<
-    //         Input<'a> = <D as IsDirtyInferenceWorkaround<'a>>::OutputWorkaround,
-    //         Target<'a> = RefMut<'a, NodeState<T>>,
-    //     > + 'a,
     T: HashValue + Clean + Named,
+    F: Named,
 {
     /// Construct this node.
     pub fn new(dependencies: D, operation: F, value: T) -> Rc<Self> {
@@ -146,18 +141,17 @@ where
 impl<D, T, F> Resolve for DerivedNode<D, T, F>
 where
     for<'a> D: Resolve + IsDirtyInferenceWorkaround<'a> + 'a,
-// TODO
-    // for<'a> F: UpdateDerived<
-    //         Input<'a> = <D as IsDirtyInferenceWorkaround<'a>>::OutputWorkaround,
-    //         Target<'a> = RefMut<'a, NodeState<T>>,
-    //     > + 'a,
     for<'a> T: UpdateDerived<<D as IsDirtyInferenceWorkaround<'a>>::OutputWorkaround, F>,
     T: HashValue + Clean + Named,
+    F: Named,
 {
-    type Output<'a> = Ref<'a, NodeState<T>> where Self: 'a ;
+    type Output<'a>
+        = Ref<'a, NodeState<T>>
+    where
+        Self: 'a;
 
     fn resolve(&self, visitor: &mut impl Visitor) -> Result<Self::Output<'_>, ResolveError> {
-        // TODO: irrelvant now?
+        visitor.touch(self, Some(F::name()));
         if visitor.visit(self) {
             let mut node_state = self.value.try_borrow_mut()?;
             node_state.clean();

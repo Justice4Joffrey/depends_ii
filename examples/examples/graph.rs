@@ -1,10 +1,7 @@
-/*use std::collections::HashSet;
+use std::collections::HashSet;
 
 use depends::{derives::Graph, Dependencies2, Dependencies3, Resolve};
-
-use crate::maths::*;
-
-mod maths;
+use examples::maths::{NumberValueI32, NumberValueI8, *};
 
 // Connecting graph nodes and tracking the complex types can be tedious!
 // Fortunately, we can auto-generate some of the boilerplate using the
@@ -26,18 +23,18 @@ mod maths;
         node_5 [label="NumberValueI32"];
         node_2 -> node_5 [label="Square"];
         node_6 [label="NumberValueI32"];
-        node_0 -> node_6 [label="Add", class="Dependencies2"];
-        node_1 -> node_6 [label="Add", class="Dependencies2"];
+        node_0 -> node_6 [label="Sum", class="Dependencies2"];
+        node_1 -> node_6 [label="Sum", class="Dependencies2"];
         node_7 [label="NumberValueI32"];
         node_3 -> node_7 [label="Multiply", class="Dependencies2"];
         node_4 -> node_7 [label="Multiply", class="Dependencies2"];
         node_8 [label="NumberValueI32"];
-        node_0 -> node_8 [label="Add", class="Dependencies2"];
-        node_7 -> node_8 [label="Add", class="Dependencies2"];
+        node_0 -> node_8 [label="Sum", class="Dependencies2"];
+        node_7 -> node_8 [label="Sum", class="Dependencies2"];
         node_9 [label="NumberValueI32"];
-        node_5 -> node_9 [label="AddThree", class="Dependencies3"];
-        node_6 -> node_9 [label="AddThree", class="Dependencies3"];
-        node_8 -> node_9 [label="AddThree", class="Dependencies3"];
+        node_5 -> node_9 [label="Sum", class="Dependencies3"];
+        node_6 -> node_9 [label="Sum", class="Dependencies3"];
+        node_8 -> node_9 [label="Sum", class="Dependencies3"];
     }
 )]
 struct GraphCreator {}
@@ -87,9 +84,4 @@ fn main() {
         println!("Answer 3: {}", res.value);
         assert_eq!(res.value, (5_i32.pow(2)) + (10 + 12) + (10 + (4 * 5)));
     }
-}
-*/
-
-fn main() {
-
 }

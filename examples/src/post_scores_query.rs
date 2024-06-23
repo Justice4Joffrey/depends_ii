@@ -1,10 +1,10 @@
-use std::{cmp::Reverse, collections::BinaryHeap};
+use std::{cell::Ref, cmp::Reverse, collections::BinaryHeap};
 
 use chrono::{DateTime, Utc};
 use depends::{
-    derives::{Dependencies, Operation, Value},
+    derives::{Operation, Value},
     error::EarlyExit,
-    DepRef2, DepRef4, SingleDep, SingleRef, TargetMut, UpdateDerived,
+    DepRef4, NodeState, UpdateDerived,
 };
 use hashbrown::HashMap;
 
@@ -34,6 +34,14 @@ pub struct PostScoresQuery {
 }
 
 impl PostScoresQuery {
+    pub fn new() -> Self {
+        Self {
+            post_scores: HashMap::with_capacity(512),
+            top_posts: BinaryHeap::with_capacity(3),
+            top_posts_generation: 0,
+        }
+    }
+
     pub fn top_posts(&self) -> String {
         let sorted = self.top_posts.clone().into_sorted_vec();
         sorted
@@ -78,15 +86,6 @@ impl PostScoresQuery {
         false
     }
 
-    /// Only stable since 1.70.0 and we want to keep MRSV to 1.65
-    #[cfg(nightly)]
-    fn retain_top_posts(&mut self, other_than: i64) {
-        self.top_posts.retain(|p| p.0.id != other_than);
-    }
-
-    /// Only stable since 1.70.0 and we want to keep MRSV to 1.65. Don't
-    /// care about the performance of this function.
-    #[cfg(not(nightly))]
     fn retain_top_posts(&mut self, other_than: i64) {
         let mut heap = BinaryHeap::new();
         while let Some(post) = self.top_posts.pop() {
@@ -98,14 +97,6 @@ impl PostScoresQuery {
     }
 }
 
-#[derive(Dependencies)]
-pub struct CommentsPostsLikes {
-    comments: Comments,
-    comments_to_posts: CommentsToPosts,
-    posts: Posts,
-    likes: Likes,
-}
-
 #[derive(Operation)]
 pub struct UpdatePostScoresQuery;
 
@@ -114,10 +105,10 @@ impl
     UpdateDerived<
         DepRef4<
             '_,
-            SingleRef<'_, Comments>,
-            SingleRef<'_, CommentsToPosts>,
-            SingleRef<'_, Posts>,
-            SingleRef<'_, Likes>,
+            Ref<'_, NodeState<Comments>>,
+            Ref<'_, NodeState<CommentsToPosts>>,
+            Ref<'_, NodeState<Posts>>,
+            Ref<'_, NodeState<Likes>>,
         >,
         UpdatePostScoresQuery,
     > for PostScoresQuery
@@ -126,10 +117,10 @@ impl
         &mut self,
         value: DepRef4<
             '_,
-            SingleRef<'_, Comments>,
-            SingleRef<'_, CommentsToPosts>,
-            SingleRef<'_, Posts>,
-            SingleRef<'_, Likes>,
+            Ref<'_, NodeState<Comments>>,
+            Ref<'_, NodeState<CommentsToPosts>>,
+            Ref<'_, NodeState<Posts>>,
+            Ref<'_, NodeState<Likes>>,
         >,
     ) -> Result<(), EarlyExit> {
         for post in value.c.new_posts() {

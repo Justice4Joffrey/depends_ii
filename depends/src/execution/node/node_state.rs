@@ -2,11 +2,13 @@ use std::{
     hash::Hasher,
     ops::{Deref, DerefMut},
 };
-use crate::error::EarlyExit;
 
 use super::NodeHash;
-use crate::execution::{Clean, HashValue, Named};
-use crate::UpdateDerived;
+use crate::{
+    error::EarlyExit,
+    execution::{Clean, HashValue, Named},
+    UpdateDerived,
+};
 
 /// A wrapper for some value `T`, tracking some context around the value's
 /// computation state.
@@ -80,7 +82,10 @@ impl<T> DerefMut for NodeState<T> {
     }
 }
 
-impl<T, D, F> UpdateDerived<D, F> for NodeState<T> where T: UpdateDerived<D, F> {
+impl<T, D, F> UpdateDerived<D, F> for NodeState<T>
+where
+    T: UpdateDerived<D, F>,
+{
     fn update(&mut self, value: D) -> Result<(), EarlyExit> {
         self.value.update(value)
     }

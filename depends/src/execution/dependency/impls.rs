@@ -1,5 +1,6 @@
-use crate::error::ResolveResult;
-use crate::{DepRef, Dependency, HashValue, IsDirty, Resolve, Visitor};
+use crate::{
+    error::ResolveResult, DepRef, Dependency, HashValue, IsDirty, Named, Resolve, Visitor,
+};
 
 macro_rules! generate_dependencies {
     ($count:expr, $($param:ident),*) => {
@@ -8,11 +9,18 @@ macro_rules! generate_dependencies {
                 $(pub [< $param:lower >]: Dependency<$param>,)*
             }
 
+            impl<$($param),*> Named for [<Dependencies $count>]<$($param),*> {
+                fn name() -> &'static str {
+                     stringify!([<Dependencies $count>])
+                }
+            }
+
             impl<$($param),*> [<Dependencies $count>]<$($param),*>
             where
                 $($param: Resolve,)*
                 $(for<'a> <$param as Resolve>::Output<'a>: HashValue,)*
             {
+                #[allow(clippy::too_many_arguments)]
                 pub fn new($([< $param:lower >]: $param),*) -> Self {
                     Self {
                         $([< $param:lower >]: Dependency::new([< $param:lower >]),)*
@@ -40,6 +48,7 @@ macro_rules! generate_dependencies {
                     Self: 'a;
 
                 fn resolve(&self, visitor: &mut impl Visitor) -> ResolveResult<Self::Output<'_>> {
+                    visitor.touch_dependency_group(Self::name());
                     Ok([<DepRef $count>] {
                         $([< $param:lower >]: self.[< $param:lower >].resolve(visitor)?,)*
                     })

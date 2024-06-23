@@ -121,7 +121,10 @@ impl<T> Resolve for InputNode<T>
 where
     T: UpdateInput,
 {
-    type Output<'a> = NodeRef<'a, T> where Self: 'a;
+    type Output<'a>
+        = NodeRef<'a, T>
+    where
+        Self: 'a;
 
     fn resolve(&self, visitor: &mut impl Visitor) -> ResolveResult<Self::Output<'_>> {
         visitor.touch(self, None);

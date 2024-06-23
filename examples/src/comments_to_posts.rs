@@ -1,7 +1,7 @@
 use depends::{
     derives::{Operation, Value},
     error::EarlyExit,
-    DepRef, SingleRef, TargetMut, UpdateDerived,
+    SingleRef, UpdateDerived,
 };
 use hashbrown::HashMap;
 
@@ -26,6 +26,13 @@ pub struct CommentsToPosts {
 }
 
 impl CommentsToPosts {
+    pub fn new() -> Self {
+        Self {
+            comments_to_posts: HashMap::with_capacity(512),
+            len: 0,
+        }
+    }
+
     pub fn get_post_id(&self, comment_id: i64) -> Result<i64, EarlyExit> {
         self.comments_to_posts
             .get(&comment_id)

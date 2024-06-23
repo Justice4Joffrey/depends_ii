@@ -6,9 +6,11 @@ pub mod models;
 
 mod comments;
 mod comments_to_posts;
+// TODO: new structure
 // mod docs;
 mod friends;
 mod likes;
+pub mod maths;
 mod post_scores_query;
 mod posts;
 mod users;

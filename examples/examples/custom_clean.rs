@@ -1,16 +1,17 @@
 #![allow(dead_code)]
 
 use std::{
+    cell::Ref,
     collections::HashSet,
     hash::{Hash, Hasher},
     rc::Rc,
 };
 
 use depends::{
-    derives::{Dependencies, Operation, Value},
+    derives::{Operation, Value},
     error::EarlyExit,
     graphviz::GraphvizVisitor,
-    Clean, DepRef2, DerivedNode, InputNode, Resolve, SingleRef, TargetMut, UpdateDerived,
+    Clean, DepRef2, Dependencies2, DerivedNode, InputNode, NodeState, Resolve, UpdateDerived,
     UpdateInput,
 };
 
@@ -58,25 +59,22 @@ impl EfficientSequence {
     }
 }
 
-#[derive(Dependencies)]
-struct SequenceDependencies {
-    sequence: Sequence,
-    efficient_sequence: EfficientSequence,
-}
-
 #[derive(Operation)]
 struct Totals;
 
-impl UpdateDerived<DepRef2<'_, SingleRef<'_, Sequence>, SingleRef<'_, EfficientSequence>>, Totals>
-    for SequenceTotals
+impl
+    UpdateDerived<
+        DepRef2<'_, Ref<'_, NodeState<Sequence>>, Ref<'_, NodeState<EfficientSequence>>>,
+        Totals,
+    > for SequenceTotals
 {
     fn update(
         &mut self,
-        value: DepRef2<'_, SingleRef<'_, Sequence>, SingleRef<'_, EfficientSequence>>,
+        value: DepRef2<'_, Ref<'_, NodeState<Sequence>>, Ref<'_, NodeState<EfficientSequence>>>,
     ) -> Result<(), EarlyExit> {
         // to calculate the total, we need to sum all the values in the
         // sequence every time this node is resolved.
-        self.sequence_value = value.a.iter().sum();
+        self.sequence_value = value.a.value.iter().sum();
         // With a bit of state tracking, however, we can avoid summing the
         // entire sequence every time, and only iterate the values which are
         // new.
@@ -99,7 +97,7 @@ fn main() {
 
     // Create the derived node.
     let sequence_dependencies =
-        SequenceDependencies::init(Rc::clone(&sequence), Rc::clone(&efficient_sequence));
+        Dependencies2::new(Rc::clone(&sequence), Rc::clone(&efficient_sequence));
     let totals = DerivedNode::new(sequence_dependencies, Totals, SequenceTotals::default());
 
     let mut visitor = GraphvizVisitor::new();

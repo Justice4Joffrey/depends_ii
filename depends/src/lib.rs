@@ -31,11 +31,12 @@
 //! # use std::rc::Rc;
 //! #
 //! # use depends::error::{EarlyExit, ResolveResult};
-//! # use depends::{Dependencies2, DepRef, DepRef2, HashSetVisitor, NodeState, SingleRef, TargetMut};
+//! # use depends::{Dependencies2, DepRef, DepRef2, HashSetVisitor, NodeState, SingleRef};
 //! # use depends::{
 //! #     DerivedNode, InputNode, Resolve, UpdateDerived, UpdateInput,
-//! #     derives::{Dependencies, Operation, Value},
+//! #     derives::{Operation, Value},
 //! # };
+//! # #[derive(Operation)]
 //! # struct Multiply;
 //! # impl UpdateDerived<DepRef2<'_, Ref<'_, NodeState<i64>>, Ref<'_, NodeState<i32>>>, Multiply> for i64 {
 //! #    fn update(
@@ -81,7 +82,6 @@
 //! // Any dependent values will be updated next time the graph is resolved.
 //! assert_eq!(c.resolve_root(&mut visitor).unwrap().value().clone(), 420);
 //! ```
-#![cfg_attr(doc_cfg, feature(doc_cfg, doc_auto_cfg))]
 
 mod execution;
 pub use execution::*;
@@ -94,4 +94,3 @@ pub mod derives {
 /// Visualisation tool for graphs.
 #[cfg(feature = "graphviz")]
 pub mod graphviz;
-mod experiment;

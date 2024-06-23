@@ -1,13 +1,14 @@
 use std::{
+    cell::Ref,
     collections::HashSet,
     hash::{Hash, Hasher},
     rc::Rc,
 };
 
 use depends::{
-    derives::{Dependencies, Operation, Value},
+    derives::{Operation, Value},
     error::{EarlyExit, ResolveError},
-    DepRef2, DepRef3, Dependency, DerivedNode, InputNode, Resolve, SingleRef, TargetMut,
+    DepRef3, Dependencies3, Dependency, DerivedNode, InputNode, NodeState, Resolve, SingleRef,
     UpdateDerived, UpdateInput,
 };
 
@@ -89,14 +90,6 @@ impl UpdateDerived<SingleRef<'_, OpenOrders>, CalculateNextNumber> for Expensive
     }
 }
 
-/// The factors which our final decision depends on.
-#[derive(Dependencies)]
-pub struct Factors {
-    open_orders: OpenOrders,
-    risk_limit: RiskLimit,
-    expensive: ExpensiveCalculation,
-}
-
 #[derive(Value, Hash, Default, Debug)]
 pub struct DecisionNode {
     value: Option<OpenOrdersOperation>,
@@ -112,9 +105,9 @@ impl
     UpdateDerived<
         DepRef3<
             '_,
-            SingleRef<'_, OpenOrders>,
-            SingleRef<'_, RiskLimit>,
-            SingleRef<'_, ExpensiveCalculation>,
+            Ref<'_, NodeState<OpenOrders>>,
+            Ref<'_, NodeState<RiskLimit>>,
+            Ref<'_, NodeState<ExpensiveCalculation>>,
         >,
         Decide,
     > for DecisionNode
@@ -123,9 +116,9 @@ impl
         &mut self,
         value: DepRef3<
             '_,
-            SingleRef<'_, OpenOrders>,
-            SingleRef<'_, RiskLimit>,
-            SingleRef<'_, ExpensiveCalculation>,
+            Ref<'_, NodeState<OpenOrders>>,
+            Ref<'_, NodeState<RiskLimit>>,
+            Ref<'_, NodeState<ExpensiveCalculation>>,
         >,
     ) -> Result<(), EarlyExit> {
         self.value = Some(OpenOrdersOperation::Add(value.c.next_number));
@@ -151,7 +144,7 @@ fn main() {
     // this node, because they are already transitively connected through
     // `expensive_node`.
     let decision = DerivedNode::new(
-        Factors::init(Rc::clone(&open_orders), risk_node, expensive_node),
+        Dependencies3::new(Rc::clone(&open_orders), risk_node, expensive_node),
         Decide,
         DecisionNode::default(),
     );
