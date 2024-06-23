@@ -10,7 +10,8 @@ use depends::{
     derives::{Dependencies, Operation, Value},
     error::EarlyExit,
     graphviz::GraphvizVisitor,
-    Clean, DerivedNode, InputNode, Resolve, TargetMut, UpdateDerived, UpdateInput,
+    Clean, DepRef2, DerivedNode, InputNode, Resolve, SingleRef, TargetMut, UpdateDerived,
+    UpdateInput,
 };
 
 /// A sequence of numbers.
@@ -66,24 +67,20 @@ struct SequenceDependencies {
 #[derive(Operation)]
 struct Totals;
 
-impl UpdateDerived for Totals {
-    type Input<'a> = SequenceDependenciesRef<'a> where Self: 'a;
-    type Target<'a> = TargetMut<'a, SequenceTotals> where Self: 'a;
-
-    fn update_derived(
-        SequenceDependenciesRef {
-            sequence,
-            efficient_sequence,
-        }: Self::Input<'_>,
-        mut target: Self::Target<'_>,
+impl UpdateDerived<DepRef2<'_, SingleRef<'_, Sequence>, SingleRef<'_, EfficientSequence>>, Totals>
+    for SequenceTotals
+{
+    fn update(
+        &mut self,
+        value: DepRef2<'_, SingleRef<'_, Sequence>, SingleRef<'_, EfficientSequence>>,
     ) -> Result<(), EarlyExit> {
         // to calculate the total, we need to sum all the values in the
         // sequence every time this node is resolved.
-        target.sequence_value = sequence.value.iter().sum();
+        self.sequence_value = value.a.iter().sum();
         // With a bit of state tracking, however, we can avoid summing the
         // entire sequence every time, and only iterate the values which are
         // new.
-        target.efficient_value += efficient_sequence.iter_dirty().sum::<i32>();
+        self.efficient_value += value.b.iter_dirty().sum::<i32>();
         Ok(())
     }
 }
