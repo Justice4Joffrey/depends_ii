@@ -1,6 +1,30 @@
 use crate::error::ResolveResult;
 use crate::{DepRef, Dependency, HashValue, IsDirty, Resolve, SingleRef, Visitor};
 
+pub struct Thang<T> {
+    pub this: i32,
+    pub that: String,
+    pub him: T,
+}
+
+impl<T> Thang<T> {
+    pub fn init<A, B>(this: i32, that: String, him: T) -> ThangDep<A, B, T>
+    where
+        for<'a> A: Resolve<Output<'a> = i32> + 'a,
+        for<'a> B: Resolve<Output<'a> = String> + 'a,
+        for<'a> C: Resolve + 'a,
+        for<'a> <A as Resolve>::Output<'a>: HashValue,
+        for<'a> <B as Resolve>::Output<'a>: HashValue,
+        for<'a> <C as Resolve>::Output<'a>: HashValue,
+    {
+        ThangDep::new(
+            Dependency::new(this),
+            Dependency::new(that),
+            Dependency::new(him),
+        )
+    }
+}
+
 pub struct ThangDep<A, B, C> {
     pub a: Dependency<A>,
     pub b: Dependency<B>,
@@ -41,7 +65,7 @@ where
     for<'a> <A as Resolve>::Output<'a>: HashValue,
     for<'a> <B as Resolve>::Output<'a>: HashValue,
     for<'a> <C as Resolve>::Output<'a>: HashValue,
-// TODO: constraints for C::Output
+    // TODO: constraints for C::Output
 {
     type Output<'a> = ThangRef<'a, <C as Resolve>::Output<'a>>
         where Self: 'a;
