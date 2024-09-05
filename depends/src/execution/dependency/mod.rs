@@ -15,7 +15,9 @@ use super::{HashValue, NodeHash, Resolve};
 use crate::execution::{error::ResolveResult, NodeState, Visitor};
 
 // TODO: replace this with a Dep1, Dep2, etc. macro.
+// TODO: I think SingleRef should be just Ref<'a, NodeState<T>>
 /// Short-hand for a reference to a single dependency.
+pub type OneRef<'a, T> = Ref<'a, NodeState<T>>;
 pub type SingleRef<'a, T> = DepRef<'a, Ref<'a, NodeState<T>>>;
 /// Short-hand for a single dependency type.
 pub type SingleDep<T> = Dependency<Rc<T>>;

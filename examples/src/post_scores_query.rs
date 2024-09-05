@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use depends::{
     derives::{Dependencies, Operation, Value},
     error::EarlyExit,
-    DepRef2, DepRef4, SingleDep, SingleRef, TargetMut, UpdateDerived,
+    DepRef2, DepRef4, SingleDep, OneRef, TargetMut, UpdateDerived,
 };
 use hashbrown::HashMap;
 
@@ -114,10 +114,10 @@ impl
     UpdateDerived<
         DepRef4<
             '_,
-            SingleRef<'_, Comments>,
-            SingleRef<'_, CommentsToPosts>,
-            SingleRef<'_, Posts>,
-            SingleRef<'_, Likes>,
+            OneRef<'_, Comments>,
+            OneRef<'_, CommentsToPosts>,
+            OneRef<'_, Posts>,
+            OneRef<'_, Likes>,
         >,
         UpdatePostScoresQuery,
     > for PostScoresQuery
@@ -126,10 +126,10 @@ impl
         &mut self,
         value: DepRef4<
             '_,
-            SingleRef<'_, Comments>,
-            SingleRef<'_, CommentsToPosts>,
-            SingleRef<'_, Posts>,
-            SingleRef<'_, Likes>,
+            OneRef<'_, Comments>,
+            OneRef<'_, CommentsToPosts>,
+            OneRef<'_, Posts>,
+            OneRef<'_, Likes>,
         >,
     ) -> Result<(), EarlyExit> {
         for post in value.c.new_posts() {

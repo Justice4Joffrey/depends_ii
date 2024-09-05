@@ -1,5 +1,5 @@
 use crate::error::ResolveResult;
-use crate::{DepRef, Dependency, HashValue, IsDirty, Resolve, Visitor};
+use crate::{DepRef, Dependency, HashValue,Named, IsDirty, Resolve, Visitor};
 
 macro_rules! generate_dependencies {
     ($count:expr, $($param:ident),*) => {
@@ -20,6 +20,16 @@ macro_rules! generate_dependencies {
                 }
             }
 
+            impl<$($param),*> From<($($param),*)> for [<Dependencies $count>]<$($param),*>
+            where
+                $($param: Resolve,)*
+                $(for<'a> <$param as Resolve>::Output<'a>: HashValue,)*
+            {
+                fn from(($([< $param:lower >],)*): ($($param),*)) -> Self {
+                    Self::new($([< $param:lower >]),*)
+                }
+            }
+
             pub struct [<DepRef $count>]<'a, $($param),*> {
                 $(pub [< $param:lower >]: DepRef<'a, $param>,)*
             }
@@ -27,6 +37,12 @@ macro_rules! generate_dependencies {
             impl<$($param),*> IsDirty for [<DepRef $count>]<'_, $($param),*> {
                 fn is_dirty(&self) -> bool {
                     $(self.[< $param:lower >].is_dirty() )||*
+                }
+            }
+
+            impl<$($param),*> Named for [<Dependencies $count>]<$($param),*> {
+                fn name() -> &'static str {
+                    concat!("Dependencies", stringify!($count))
                 }
             }
 
@@ -40,6 +56,7 @@ macro_rules! generate_dependencies {
                     Self: 'a;
 
                 fn resolve(&self, visitor: &mut impl Visitor) -> ResolveResult<Self::Output<'_>> {
+                    visitor.touch_dependency_group(Self::name());
                     Ok([<DepRef $count>] {
                         $([< $param:lower >]: self.[< $param:lower >].resolve(visitor)?,)*
                     })

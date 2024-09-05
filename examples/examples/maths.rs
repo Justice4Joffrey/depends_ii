@@ -10,6 +10,7 @@ use depends::{
     UpdateInput,
 };
 use depends::derives::Operation;
+use depends::graphviz::GraphvizVisitor;
 
 pub trait NumberLike {
     fn value(&self) -> i32;
@@ -166,9 +167,9 @@ fn main() {
     );
 
     // We can render the graph to Graphviz format
-    // let mut visitor = GraphvizVisitor::new();
-    // answer.resolve(&mut visitor).unwrap();
-    // println!("{}", visitor.render().unwrap());
+    let mut visitor = GraphvizVisitor::new();
+    answer.resolve(&mut visitor).unwrap();
+    println!("{}", visitor.render().unwrap());
 
     // We can now resolve the graph. This will update all of the derived
     // nodes

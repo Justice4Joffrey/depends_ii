@@ -2,7 +2,7 @@ use std::{cell::Ref, path::Path};
 
 use benches::{read_csv_file, read_csv_update, Phase, SocialNetworkConfig};
 use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
-use depends::{derives::Graph, error::ResolveResult, GraphCreate, NodeState, Resolve, Visitor};
+use depends::{Dependencies4, derives::Graph, error::ResolveResult, GraphCreate, NodeState, Resolve, Visitor};
 use envconfig::Envconfig;
 use examples::{models::*, *};
 use hashbrown::HashSet;
@@ -16,10 +16,10 @@ use hashbrown::HashSet;
         comment_to_posts [label="CommentsToPosts"];
         comments -> comment_to_posts [label="TrackCommentPostIds"];
         query [label="PostScoresQuery"];
-        comments -> query [label="UpdatePostScoresQuery", class="CommentsPostsLikesDep"];
-        comment_to_posts -> query [label="UpdatePostScoresQuery", class="CommentsPostsLikesDep"];
-        posts -> query [label="UpdatePostScoresQuery", class="CommentsPostsLikesDep"];
-        likes -> query [label="UpdatePostScoresQuery", class="CommentsPostsLikesDep"];
+        comments -> query [label="UpdatePostScoresQuery", class="Dependencies4"];
+        comment_to_posts -> query [label="UpdatePostScoresQuery", class="Dependencies4"];
+        posts -> query [label="UpdatePostScoresQuery", class="Dependencies4"];
+        likes -> query [label="UpdatePostScoresQuery", class="Dependencies4"];
     }
 )]
 struct Foo {}
