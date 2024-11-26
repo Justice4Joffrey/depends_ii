@@ -49,10 +49,10 @@ use crate::execution::{
 /// # use depends::error::EarlyExit;
 /// # #[derive(Operation)]
 /// # struct Concat;
-/// # impl UpdateDerived<DepRef2<'_, Ref<'_, NodeState<String>>, Ref<'_, NodeState<String>>>, Concat> for String {
+/// # impl UpdateDerived<DepRef2<'_, String, String>, Concat> for String {
 /// #    fn update(
 /// #        &mut self,
-/// #        deps: DepRef2<'_, Ref<'_, NodeState<String>>, Ref<'_, NodeState<String>>>,
+/// #        deps: DepRef2<'_, String, String>,
 /// #    ) -> Result<(), EarlyExit> {
 /// #         *self = format!("{} {}", deps.a.data().value(), deps.b.data().value());
 /// #         Ok(())

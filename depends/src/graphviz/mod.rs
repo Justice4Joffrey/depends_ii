@@ -27,8 +27,8 @@ impl Node {
 /// # use depends::{
 /// #     derives::{Operation, Value},
 /// #     error::{EarlyExit, ResolveResult},
-/// #     DepRef, DepRef2, DepRef3, Dependencies2, Dependencies3, Dependency, DerivedNode, HashValue,
-/// #     InputNode, NodeHash, Resolve, SingleRef, UpdateDerived, UpdateInput,
+/// #     DependencyEdge, DepRef2, DepRef3, Dependencies2, Dependencies3, Dependency, DerivedNode, HashValue,
+/// #     InputNode, NodeHash, Resolve, DepRef, UpdateDerived, UpdateInput,
 /// # };
 /// # pub trait NumberLike {
 /// #     fn value(&self) -> i32;
@@ -64,12 +64,12 @@ impl Node {
 /// #     }
 /// # }
 /// #
-/// # impl NumberLike for Ref<'_, NodeState<NumberValueI8>> {
+/// # impl NumberLike for NumberValueI8 {
 /// #     fn value(&self) -> i32 {
 /// #         self.value as i32
 /// #     }
 /// # }
-/// # impl NumberLike for Ref<'_, NodeState<NumberValueI32>> {
+/// # impl NumberLike for NumberValueI32 {
 /// #     fn value(&self) -> i32 {
 /// #         self.value
 /// #     }
@@ -89,7 +89,7 @@ impl Node {
 /// #
 /// # impl<A: NumberLike, B: NumberLike> UpdateDerived<DepRef2<'_, A, B>, Sum> for NumberValueI32 {
 /// #     fn update(&mut self, value: DepRef2<'_, A, B>) -> Result<(), EarlyExit> {
-/// #         self.value = value.a.data().value() + value.b.data().value();
+/// #         self.value = value.0.data().value() + value.1.data().value();
 /// #         Ok(())
 /// #     }
 /// # }
@@ -98,15 +98,15 @@ impl Node {
 /// # for NumberValueI32
 /// # {
 /// #     fn update(&mut self, value: DepRef3<'_, A, B, C>) -> Result<(), EarlyExit> {
-/// #         self.value = value.a.data().value() + value.b.data().value() + value.c.data().value();
+/// #         self.value = value.0.data().value() + value.1.data().value() + value.2.data().value();
 /// #         Ok(())
 /// #     }
 /// # }
 /// # #[derive(Operation)]
 /// # pub struct Square;
 /// #
-/// # impl<A: NumberLike> UpdateDerived<DepRef<'_, A>, Square> for NumberValueI32 {
-/// #     fn update(&mut self, value: DepRef<'_, A>) -> Result<(), EarlyExit> {
+/// # impl<A: NumberLike> UpdateDerived<DependencyEdge<'_, A>, Square> for NumberValueI32 {
+/// #     fn update(&mut self, value: DependencyEdge<'_, A>) -> Result<(), EarlyExit> {
 /// #         self.value = value.data().value().pow(2);
 /// #         Ok(())
 /// #     }
@@ -116,7 +116,7 @@ impl Node {
 /// #
 /// # impl<A: NumberLike, B: NumberLike> UpdateDerived<DepRef2<'_, A, B>, Multiply> for NumberValueI32 {
 /// #     fn update(&mut self, value: DepRef2<'_, A, B>) -> Result<(), EarlyExit> {
-/// #         self.value = value.a.data().value() * value.b.data().value();
+/// #         self.value = value.0.data().value() * value.1.data().value();
 /// #         Ok(())
 /// #     }
 /// # }

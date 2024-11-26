@@ -1,7 +1,7 @@
 use depends::{
     derives::{Operation, Value},
     error::EarlyExit,
-    SingleRef, UpdateDerived,
+    DepRef, UpdateDerived,
 };
 use hashbrown::HashMap;
 
@@ -44,8 +44,8 @@ impl CommentsToPosts {
 #[derive(Operation)]
 pub struct TrackCommentPostIds;
 
-impl UpdateDerived<SingleRef<'_, Comments>, TrackCommentPostIds> for CommentsToPosts {
-    fn update(&mut self, value: SingleRef<'_, Comments>) -> Result<(), EarlyExit> {
+impl UpdateDerived<DepRef<'_, Comments>, TrackCommentPostIds> for CommentsToPosts {
+    fn update(&mut self, value: DepRef<'_, Comments>) -> Result<(), EarlyExit> {
         for comment in value.new_comments() {
             let post_id = if let Some(post_id) = self.comments_to_posts.get(&comment.parent_id) {
                 *post_id

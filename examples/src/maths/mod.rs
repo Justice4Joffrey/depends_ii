@@ -1,9 +1,7 @@
-use std::cell::Ref;
-
 use depends::{
     derives::{Operation, Value},
     error::EarlyExit,
-    DepRef, DepRef2, DepRef3, NodeState, UpdateDerived, UpdateInput,
+    DepRef, DepRef2, DepRef3, UpdateDerived, UpdateInput,
 };
 
 pub trait NumberLike {
@@ -48,12 +46,12 @@ impl NumberValueI8 {
     }
 }
 
-impl NumberLike for Ref<'_, NodeState<NumberValueI8>> {
+impl NumberLike for NumberValueI8 {
     fn value(&self) -> i32 {
         self.value as i32
     }
 }
-impl NumberLike for Ref<'_, NodeState<NumberValueI32>> {
+impl NumberLike for NumberValueI32 {
     fn value(&self) -> i32 {
         self.value
     }
@@ -78,7 +76,7 @@ pub struct Sum;
 // represents read-references to all of its fields.
 impl<A: NumberLike, B: NumberLike> UpdateDerived<DepRef2<'_, A, B>, Sum> for NumberValueI32 {
     fn update(&mut self, value: DepRef2<'_, A, B>) -> Result<(), EarlyExit> {
-        self.value = value.a.data().value() + value.b.data().value();
+        self.value = value.0.data().value() + value.1.data().value();
         Ok(())
     }
 }
@@ -87,7 +85,7 @@ impl<A: NumberLike, B: NumberLike, C: NumberLike> UpdateDerived<DepRef3<'_, A, B
     for NumberValueI32
 {
     fn update(&mut self, value: DepRef3<'_, A, B, C>) -> Result<(), EarlyExit> {
-        self.value = value.a.data().value() + value.b.data().value() + value.c.data().value();
+        self.value = value.0.data().value() + value.1.data().value() + value.2.data().value();
         Ok(())
     }
 }
@@ -106,7 +104,7 @@ impl<A: NumberLike> UpdateDerived<DepRef<'_, A>, Square> for NumberValueI32 {
 pub struct Multiply;
 impl<A: NumberLike, B: NumberLike> UpdateDerived<DepRef2<'_, A, B>, Multiply> for NumberValueI32 {
     fn update(&mut self, value: DepRef2<'_, A, B>) -> Result<(), EarlyExit> {
-        self.value = value.a.data().value() * value.b.data().value();
+        self.value = value.0.data().value() * value.1.data().value();
         Ok(())
     }
 }

@@ -1,5 +1,5 @@
-mod dep_ref;
 mod dep_state;
+mod dependency_edge;
 mod impls;
 
 use std::{
@@ -7,15 +7,15 @@ use std::{
     rc::Rc,
 };
 
-pub use dep_ref::DepRef;
 pub use dep_state::DependencyState;
+pub use dependency_edge::DependencyEdge;
 pub use impls::*;
 
 use super::{HashValue, NodeHash, Resolve};
 use crate::execution::{error::ResolveResult, NodeState, Visitor};
 
 /// Short-hand for a reference to a single dependency.
-pub type SingleRef<'a, T> = DepRef<'a, Ref<'a, NodeState<T>>>;
+pub type DepRef<'a, T> = DependencyEdge<'a, Ref<'a, NodeState<T>>>;
 /// Short-hand for a single dependency type.
 pub type SingleDep<T> = Dependency<Rc<T>>;
 
@@ -49,7 +49,7 @@ where
     for<'a> <T as Resolve>::Output<'a>: HashValue,
 {
     type Output<'a>
-        = DepRef<'a, T::Output<'a>>
+        = DependencyEdge<'a, T::Output<'a>>
     where
         Self: 'a;
 
@@ -58,10 +58,10 @@ where
         let data = self.dependency.resolve(visitor)?;
         let current_state = data.hash_value(&mut visitor.hasher());
         if last_state.map(|s| s == current_state).unwrap_or(false) {
-            Ok(DepRef::new(DependencyState::Clean, data))
+            Ok(DependencyEdge::new(DependencyState::Clean, data))
         } else {
             (*last_state) = Some(current_state);
-            Ok(DepRef::new(DependencyState::Dirty, data))
+            Ok(DependencyEdge::new(DependencyState::Dirty, data))
         }
     }
 }

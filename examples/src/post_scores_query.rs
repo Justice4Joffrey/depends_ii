@@ -1,10 +1,10 @@
-use std::{cell::Ref, cmp::Reverse, collections::BinaryHeap};
+use std::{cmp::Reverse, collections::BinaryHeap};
 
 use chrono::{DateTime, Utc};
 use depends::{
     derives::{Operation, Value},
     error::EarlyExit,
-    DepRef4, NodeState, UpdateDerived,
+    DepRef4, UpdateDerived,
 };
 use hashbrown::HashMap;
 
@@ -101,29 +101,14 @@ impl PostScoresQuery {
 pub struct UpdatePostScoresQuery;
 
 // TODO: use shorthand
-impl
-    UpdateDerived<
-        DepRef4<
-            '_,
-            Ref<'_, NodeState<Comments>>,
-            Ref<'_, NodeState<CommentsToPosts>>,
-            Ref<'_, NodeState<Posts>>,
-            Ref<'_, NodeState<Likes>>,
-        >,
-        UpdatePostScoresQuery,
-    > for PostScoresQuery
+impl UpdateDerived<DepRef4<'_, Comments, CommentsToPosts, Posts, Likes>, UpdatePostScoresQuery>
+    for PostScoresQuery
 {
     fn update(
         &mut self,
-        value: DepRef4<
-            '_,
-            Ref<'_, NodeState<Comments>>,
-            Ref<'_, NodeState<CommentsToPosts>>,
-            Ref<'_, NodeState<Posts>>,
-            Ref<'_, NodeState<Likes>>,
-        >,
+        value: DepRef4<'_, Comments, CommentsToPosts, Posts, Likes>,
     ) -> Result<(), EarlyExit> {
-        for post in value.c.new_posts() {
+        for post in value.2.new_posts() {
             self.post_scores.insert(
                 post.id,
                 PostScore {
@@ -135,15 +120,15 @@ impl
         }
 
         let mut delta = 0;
-        for comment in value.a.new_comments() {
-            let post_id = value.b.get_post_id(comment.id)?;
+        for comment in value.0.new_comments() {
+            let post_id = value.1.get_post_id(comment.id)?;
             if self.update_post_score(post_id, 10)? {
                 delta = 1;
             }
         }
 
-        for like in value.d.new_likes() {
-            let post_id = value.b.get_post_id(like.comment_id)?;
+        for like in value.3.new_likes() {
+            let post_id = value.1.get_post_id(like.comment_id)?;
             if self.update_post_score(post_id, 1)? {
                 delta = 1;
             }

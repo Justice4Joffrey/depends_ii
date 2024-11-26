@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 use std::{
-    cell::Ref,
     collections::HashSet,
     hash::{Hash, Hasher},
     rc::Rc,
@@ -11,8 +10,7 @@ use depends::{
     derives::{Operation, Value},
     error::EarlyExit,
     graphviz::GraphvizVisitor,
-    Clean, DepRef2, Dependencies2, DerivedNode, InputNode, NodeState, Resolve, UpdateDerived,
-    UpdateInput,
+    Clean, DepRef2, Dependencies2, DerivedNode, InputNode, Resolve, UpdateDerived, UpdateInput,
 };
 
 /// A sequence of numbers.
@@ -62,23 +60,15 @@ impl EfficientSequence {
 #[derive(Operation)]
 struct Totals;
 
-impl
-    UpdateDerived<
-        DepRef2<'_, Ref<'_, NodeState<Sequence>>, Ref<'_, NodeState<EfficientSequence>>>,
-        Totals,
-    > for SequenceTotals
-{
-    fn update(
-        &mut self,
-        value: DepRef2<'_, Ref<'_, NodeState<Sequence>>, Ref<'_, NodeState<EfficientSequence>>>,
-    ) -> Result<(), EarlyExit> {
+impl UpdateDerived<DepRef2<'_, Sequence, EfficientSequence>, Totals> for SequenceTotals {
+    fn update(&mut self, value: DepRef2<'_, Sequence, EfficientSequence>) -> Result<(), EarlyExit> {
         // to calculate the total, we need to sum all the values in the
         // sequence every time this node is resolved.
-        self.sequence_value = value.a.value.iter().sum();
+        self.sequence_value = value.0.value.iter().sum();
         // With a bit of state tracking, however, we can avoid summing the
         // entire sequence every time, and only iterate the values which are
         // new.
-        self.efficient_value += value.b.iter_dirty().sum::<i32>();
+        self.efficient_value += value.1.iter_dirty().sum::<i32>();
         Ok(())
     }
 }

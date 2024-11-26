@@ -31,17 +31,17 @@
 //! # use std::rc::Rc;
 //! #
 //! # use depends::error::{EarlyExit, ResolveResult};
-//! # use depends::{Dependencies2, DepRef, DepRef2, HashSetVisitor, NodeState, SingleRef};
+//! # use depends::{Dependencies2, DependencyEdge, DepRef2, HashSetVisitor, NodeState, DepRef};
 //! # use depends::{
 //! #     DerivedNode, InputNode, Resolve, UpdateDerived, UpdateInput,
 //! #     derives::{Operation, Value},
 //! # };
 //! # #[derive(Operation)]
 //! # struct Multiply;
-//! # impl UpdateDerived<DepRef2<'_, Ref<'_, NodeState<i64>>, Ref<'_, NodeState<i32>>>, Multiply> for i64 {
+//! # impl UpdateDerived<DepRef2<'_, i64, i32>, Multiply> for i64 {
 //! #    fn update(
 //! #        &mut self,
-//! #        deps: DepRef2<'_, Ref<'_, NodeState<i64>>, Ref<'_, NodeState<i32>>>,
+//! #        deps: DepRef2<'_, i64, i32>,
 //! #    ) -> Result<(), EarlyExit> {
 //! #        *self = deps.a.data().value() * (*deps.b.data().value()as i64);
 //! #        Ok(())
