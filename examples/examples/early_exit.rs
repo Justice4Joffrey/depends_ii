@@ -107,7 +107,7 @@ impl UpdateDerived<DepRef3<'_, OpenOrders, RiskLimit, ExpensiveCalculation>, Dec
         &mut self,
         value: DepRef3<'_, OpenOrders, RiskLimit, ExpensiveCalculation>,
     ) -> Result<(), EarlyExit> {
-        self.value = Some(OpenOrdersOperation::Add(value.c.next_number));
+        self.value = Some(OpenOrdersOperation::Add(value.2.next_number));
         Ok(())
     }
 }

@@ -2,10 +2,7 @@ mod dep_state;
 mod dependency_edge;
 mod impls;
 
-use std::{
-    cell::{Ref, RefCell},
-    rc::Rc,
-};
+use std::cell::{Ref, RefCell};
 
 pub use dep_state::DependencyState;
 pub use dependency_edge::DependencyEdge;
@@ -16,8 +13,6 @@ use crate::execution::{error::ResolveResult, NodeState, Visitor};
 
 /// Short-hand for a reference to a single dependency.
 pub type DepRef<'a, T> = DependencyEdge<'a, Ref<'a, NodeState<T>>>;
-/// Short-hand for a single dependency type.
-pub type SingleDep<T> = Dependency<Rc<T>>;
 
 /// Wraps a dependency and tracks the hashed value each time it's resolved. This
 /// allows the resolver to know if a dependency is 'dirty' from the perspective
@@ -60,7 +55,7 @@ where
         if last_state.map(|s| s == current_state).unwrap_or(false) {
             Ok(DependencyEdge::new(DependencyState::Clean, data))
         } else {
-            (*last_state) = Some(current_state);
+            *last_state = Some(current_state);
             Ok(DependencyEdge::new(DependencyState::Dirty, data))
         }
     }
@@ -69,6 +64,7 @@ where
 #[cfg(test)]
 mod tests {
     use serial_test::serial;
+    use std::rc::Rc;
 
     use super::*;
     use crate::execution::{
